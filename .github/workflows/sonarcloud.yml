@@ -1,0 +1,33 @@
+name: SonarCloud Analysis
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+jobs:
+  sonar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history is required for accurate blame / new-code detection
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      # Compile + run the Testcontainers tests so Sonar has classes and reports
+      - name: Build and test
+        run: ./mvnw -B verify
+
+      # Reads every setting (projectKey, organization, exclusions, ...) from
+      # sonar-project.properties — nothing SonarCloud-specific is duplicated here.
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
